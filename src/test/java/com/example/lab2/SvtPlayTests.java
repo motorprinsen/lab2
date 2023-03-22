@@ -443,7 +443,11 @@ public class SvtPlayTests {
         driver.findElement(By.xpath(searchFormXpath)).click();
 
         // Verify that no programs were found
-        var mainElement = driver.findElement(By.id("play_main-content"));
+        var mainElementId = "play_main-content";
+        new WebDriverWait(driver, Duration.ofSeconds(toWait))
+                .until(ExpectedConditions.visibilityOfElementLocated(By.id(mainElementId)));
+        var mainElement = driver.findElement(By.id(mainElementId));
+
         var paragraphXpath = "section/div/p[1]";
         var actualResultText = mainElement.findElement(By.xpath(paragraphXpath)).getText();
         var expectedResultText = "Inga sökträffar.";
