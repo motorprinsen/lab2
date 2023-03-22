@@ -380,10 +380,10 @@ public class SvtPlayTests {
         driver.findElement(By.linkText("Inställningar".toUpperCase())).click();
 
         // Toggle the autoplay switch
-        var autoplaySwitchXpath = "//label[@for='play_autoplay-settings-switch']";
+        var autoplaySwitchClassName = "jmdfsN";
         new WebDriverWait(driver, Duration.ofSeconds(toWait))
-                .until(ExpectedConditions.visibilityOfElementLocated(By.xpath(autoplaySwitchXpath)));
-        driver.findElement(By.xpath(autoplaySwitchXpath)).click();
+                .until(ExpectedConditions.visibilityOfElementLocated(By.className(autoplaySwitchClassName)));
+        driver.findElement(By.className(autoplaySwitchClassName)).click();
 
         var expectedAutoplayEnabled = false;
         var autoplayEnabledAfterToggle = false;
