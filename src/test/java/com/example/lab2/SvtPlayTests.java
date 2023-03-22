@@ -6,12 +6,14 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONException;
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.html5.WebStorage;
 import org.openqa.selenium.remote.Augmenter;
+import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -25,7 +27,7 @@ import java.util.Locale;
 public class SvtPlayTests {
 
     private static WebDriver driver;
-    private static int toWait = 5;
+    private static final int toWait = 5;
 
     /**
      * Sets up a fresh, new browser for every run.
@@ -36,6 +38,8 @@ public class SvtPlayTests {
         var options = new ChromeOptions();
         options.addArguments("--remote-allow-origins=*", "--incognito");
         driver = new ChromeDriver(options);
+
+        //driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
 
         driver.get("https://www.svtplay.se/");
         acceptCookieConsentDialog();
@@ -183,8 +187,39 @@ public class SvtPlayTests {
      */
     @Test
     void verifyThatCookieSettingsAreRespected() {
-        // Grab the cookie consent cookie
-        var cookie = driver.manage().getCookieNamed("cookie-consent-1").toJson();
+        // Note: The cookie handling really annoys me...
+        //       Sometimes it works flawlessly without any waits or anything,
+        //       other times the cookie cannot be found.
+        //       I don't know if it's because of my aging computer or if it's
+        //       something I'm doing wrong.
+        //
+        //       Anyhow, the trick that seems to work best is to construct a custom
+        //       ExpectedCondition to check if the cookie is there.
+
+        // The name of the cookie we're interested in
+        var cookieName = "cookie-consent-1";
+
+        // Try to get the raw cookie
+        Cookie rawCookie = null;
+        try {
+            rawCookie = new WebDriverWait(driver, Duration.ofSeconds(toWait))
+                    .until(
+                            (ExpectedCondition<Cookie>) webDriver -> {
+                                // We either return the actual cookie or null if not found
+                                return driver.manage().getCookieNamed(cookieName);
+                            }
+                    );
+
+        } catch (Exception e){
+            Assertions.fail("Exception while getting initial cookie");
+        }
+
+        if (rawCookie == null) {
+            Assertions.fail("Failed to get initial cookie");
+        }
+
+        // Convert the cookie to json
+        var cookie = rawCookie.toJson();
 
         // We accepted all cookies in the setup
         var expectedInitialAdStorageConsent = true;
@@ -226,10 +261,27 @@ public class SvtPlayTests {
         new WebDriverWait(driver, Duration.ofSeconds(toWait))
                 .until(ExpectedConditions.invisibilityOfElementLocated(By.xpath(modalXpath)));
 
-        driver.navigate().refresh();
+        // Try to get the updated cookie
+        rawCookie = null;
+        try {
+            rawCookie = new WebDriverWait(driver, Duration.ofSeconds(toWait))
+                    .until(
+                            (ExpectedCondition<Cookie>) webDriver -> {
+                                // We either return the actual cookie or null if not found
+                                return driver.manage().getCookieNamed(cookieName);
+                            }
+                    );
 
-        // Grab the cookie again.
-        cookie = driver.manage().getCookieNamed("cookie-consent-1").toJson();
+        } catch (Exception e){
+            Assertions.fail("Exception while getting updated cookie");
+        }
+
+        if (rawCookie == null) {
+            Assertions.fail("Failed to get updated cookie");
+        }
+
+        // Convert the updated cookie
+        cookie = rawCookie.toJson();
 
         var expectedAdStorageConsent = false;
         var adStorageConsentAfterToggle = false;
@@ -539,11 +591,11 @@ public class SvtPlayTests {
      *              their "src" attribute to verify that no broken image links exist.
      *              Also verify that all images have an alternate text attribute.
      *
-     *              Please note that the alt text check sometimes fails.
+     *              Note: The alt text check sometimes fails.
      *              Although SVT claims that they are "accessibility certified" and adhere
      *              the guidelines of WCAG, I have noticed that some images occasionally does not
      *              have an alt text.
-     *              And this directly violates section H37 of WCAG (https://www.w3.org/TR/WCAG20-TECHS/H37.html).
+     *              And this directly violates <a href="https://www.w3.org/TR/WCAG20-TECHS/H37.html">section H37 of WCAG</a>.
      *              I have reported this to SVT, but they haven't responded yet (2023-03-20).
      */
     @Test
@@ -577,7 +629,7 @@ public class SvtPlayTests {
 
                 // Get the actual source image
                 var request = new HttpGet(image.getAttribute("src"));
-                CloseableHttpResponse response = null;
+                CloseableHttpResponse response;
                 try {
                     response = client.execute(request);
                 } catch (IOException e) {
