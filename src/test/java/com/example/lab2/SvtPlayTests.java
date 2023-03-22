@@ -243,16 +243,18 @@ public class SvtPlayTests {
                 .until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(cookieButtonClass)));
         driver.findElement(By.cssSelector(cookieButtonClass)).click();
 
-        // Wait for the element to show up
+        // Wait for ad storage option to show up
+        var adStorageId = "play_cookie_consent_ad_storage";
         new WebDriverWait(driver, Duration.ofSeconds(toWait))
-                .until(ExpectedConditions.visibilityOfElementLocated(By.id("play_cookie_consent_ad_storage")));
+                .until(ExpectedConditions.visibilityOfElementLocated(By.id(adStorageId)));
 
         // Toggle the ad storage consent switch
         var consentSwitchXpath = "//label[@for='play_cookie_consent_ad_storage']";
         driver.findElement(By.xpath(consentSwitchXpath)).click();
 
         // Save the new cookie preferences
-        driver.findElement(By.cssSelector(".sc-5b00349a-2.fuGbXH.sc-4f221cd2-9.hEiUxP")).click();
+        var saveButtonSelector = ".sc-5b00349a-2.fuGbXH.sc-4f221cd2-9.hEiUxP";
+        driver.findElement(By.cssSelector(saveButtonSelector)).click();
 
         // The modal takes a couple of seconds to close after accepting
         var modalXpath = "//div[@data-rt='cookie-consent-modal']";
