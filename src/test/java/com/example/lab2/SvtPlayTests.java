@@ -39,8 +39,6 @@ public class SvtPlayTests {
         options.addArguments("--remote-allow-origins=*", "--incognito");
         driver = new ChromeDriver(options);
 
-        //driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
-
         driver.get("https://www.svtplay.se/");
         acceptCookieConsentDialog();
     }
